@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "normet"
-version = "0.2.1"
+version = "0.2.2"
 description = "Normalisation, Decomposition, and Counterfactual Modelling for Environmental Time-series"
 readme = "README.md"
 license = { file = "LICENSE" }
