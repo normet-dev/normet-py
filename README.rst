@@ -158,7 +158,7 @@ Run augmented synthetic control (ASCM):
         treated_unit="Beijing",
         cutoff_date="2017-01-01",
         donors=["Shanghai", "Guangzhou", "Chengdu"],
-        scm_backend="ascm",
+        ascm_backend="ascm",
     )
 
     print(syn.head())  # observed, synthetic, effect
@@ -194,7 +194,7 @@ Placebo-in-time test:
         outcome_col="pm25",
         treated_unit="Beijing",
         cutoff_date="2017-01-01",
-        scm_backend="ascm", #'ascm' or 'mlascm'
+        ascm_backend="ascm", #'ascm' or 'mlascm'
         n_rep=50,  # number of pseudo cutoffs to test
     )
 
@@ -219,7 +219,7 @@ Uncertainty bands can be constructed using either **bootstrap** or **jackknife**
         outcome_col="pm25",
         treated_unit="Beijing",
         cutoff_date="2017-01-01",
-        scm_backend="ascm",
+        ascm_backend="ascm",
         method="bootstrap",   # donor/time resampling
         B=200,
     )
@@ -234,7 +234,7 @@ Uncertainty bands can be constructed using either **bootstrap** or **jackknife**
         outcome_col="pm25",
         treated_unit="Beijing",
         cutoff_date="2017-01-01",
-        scm_backend="ascm",
+        ascm_backend="ascm",
         method="jackknife",   # leave-one-donor-out
         ci_level=0.95,
     )
