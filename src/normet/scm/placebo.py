@@ -30,7 +30,7 @@ def placebo_in_space(
     treated_unit: str,
     cutoff_date: str,
     donors: Optional[List[str]] = None,
-    scm_backend: str = "ascm",
+    ascm_backend: str = "ascm",
     post_agg: str = "mean",  # {'mean','sum'}
     **kwargs,
 ) -> dict:
@@ -44,10 +44,10 @@ def placebo_in_space(
         log.warning("Invalid post_agg=%s; falling back to 'mean'.", post_agg)
         post_agg = "mean"
 
-    ml_backend = kwargs.get("backend") if scm_backend == "mlascm" else None
+    ml_backend = kwargs.get("backend") if ascm_backend == "mlascm" else None
     log.info(
-        "Placebo-in-space: scm_backend=%s | backend=%s | treated=%s | cutoff=%s",
-        scm_backend, ml_backend, treated_unit, cutoff_date
+        "Placebo-in-space: ascm_backend=%s | backend=%s | treated=%s | cutoff=%s",
+        ascm_backend, ml_backend, treated_unit, cutoff_date
     )
 
     # True treated run
@@ -59,7 +59,7 @@ def placebo_in_space(
         treated_unit=treated_unit,
         cutoff_date=cutoff_ts.strftime("%Y-%m-%d"),
         donors=donors,
-        scm_backend=scm_backend,
+        ascm_backend=ascm_backend,
         **kwargs,
     )
 
@@ -89,7 +89,7 @@ def placebo_in_space(
                 treated_unit=u,
                 cutoff_date=cutoff_ts.strftime("%Y-%m-%d"),
                 donors=[d for d in all_units if d != u],
-                scm_backend=scm_backend,
+                ascm_backend=ascm_backend,
                 **kwargs,
             )
             placebo_effects[u] = syn_u[["effect"]].rename(columns={"effect": u})
@@ -146,7 +146,7 @@ def placebo_in_time(
     treated_unit: str,
     cutoff_date: str,
     donors: Optional[List[str]] = None,
-    scm_backend: str = "ascm",
+    ascm_backend: str = "ascm",
     post_agg: str = "mean",          # {'mean','sum'}
     min_pre_period: int = 30,
     placebo_every: int = 7,
@@ -186,7 +186,7 @@ def placebo_in_time(
         treated_unit=treated_unit,
         cutoff_date=cutoff_dt.strftime("%Y-%m-%d"),
         donors=donors,
-        scm_backend=scm_backend,
+        ascm_backend=ascm_backend,
         **kwargs,
     )
     dates_all = df_true.index.sort_values()
@@ -235,7 +235,7 @@ def placebo_in_time(
                 treated_unit=treated_unit,
                 cutoff_date=pc_date.strftime("%Y-%m-%d"),
                 donors=donors,
-                scm_backend=scm_backend,
+                ascm_backend=ascm_backend,
                 **kwargs,
             )
             eff = syn_pc["effect"]
@@ -294,8 +294,8 @@ def placebo_in_time(
     )
 
     log.info(
-        "Placebo-in-time: scm_backend=%s | treated=%s | donors=%d | cutoffs=%d | post_agg=%s",
-        scm_backend, treated_unit, len(donors), len(placebo_candidates), post_agg
+        "Placebo-in-time: ascm_backend=%s | treated=%s | donors=%d | cutoffs=%d | post_agg=%s",
+        ascm_backend, treated_unit, len(donors), len(placebo_candidates), post_agg
     )
 
     return {

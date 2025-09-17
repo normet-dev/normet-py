@@ -134,34 +134,74 @@ def train_model(
     """
     Train an AutoML model with FLAML or H2O.
 
+    This is a high-level wrapper that delegates to :func:`train_flaml`
+    or :func:`train_h2o` depending on ``backend``. The ``model_config``
+    dictionary allows overriding backend defaults.
+
     Parameters
     ----------
     df : pandas.DataFrame
-        Prepared dataset (should contain 'value' and features; may include 'set').
+        Prepared dataset (must contain the target and predictor columns;
+        may include a 'set' column for train/test partition).
     value : str, default="value"
-        Target column to fit.
-    backend : {"flaml","h2o"}, default="flaml"
-        AutoML backend.
-    variables : List[str], optional
-        Predictor names (non-empty, unique).
+        Name of the target column.
+    backend : {"flaml", "h2o"}, default="flaml"
+        AutoML backend to use.
+    variables : list[str], optional
+        Predictor names. Must be non-empty and unique.
     model_config : dict, optional
-        Backend-specific configuration.
+        Backend-specific configuration options. Recognized keys:
+
+        **FLAML** (see :func:`train_flaml` for details; defaults in brackets):
+            - ``time_budget`` : int, search time in seconds [90]
+            - ``metric`` : str, e.g. "r2", "mae" ["r2"]
+            - ``estimator_list`` : list[str], candidate estimators [["lgbm"]]
+            - ``task`` : {"regression","classification"} ["regression"]
+            - ``eval_method`` : {"auto","cv","holdout"} ["auto"]
+            - ``save_model`` : bool [False]
+            - ``model_name`` : str ["automl"]
+            - ``model_path`` : str ["./"]
+            - ``verbose`` : bool [inherits function ``verbose``]
+
+        **H2O** (see :func:`train_h2o` for details; defaults in brackets):
+            - ``max_models`` : int [10]
+            - ``nfolds`` : int [5]
+            - ``include_algos`` : list[str], e.g. ["GBM","GLM"] [["GBM"]]
+            - ``sort_metric`` : str, leaderboard metric ["deviance"]
+            - ``max_mem_size`` : str, cluster heap size ["16G"]
+            - ``save_model`` : bool [False]
+            - ``model_name`` : str ["automl"]
+            - ``model_path`` : str ["./"]
+            - ``seed`` : int [inherits function ``seed``]
+            - ``verbose`` : bool [inherits function ``verbose``]
+
     seed : int, default=7654321
-        Random seed.
+        Random seed for reproducibility.
     n_cores : int | None, optional
-        CPU cores (H2O only; default all-1).
+        CPU cores for H2O cluster initialization (ignored by FLAML).
+        If None, uses all cores minus one.
     verbose : bool, default=True
         Verbose logging.
 
     Returns
     -------
     object
-        Trained model with attribute ``backend`` in {'flaml','h2o'}.
+        Trained model object. The returned model has an attribute
+        ``backend`` set to either "flaml" or "h2o".
 
     Raises
     ------
     ValueError
-        If variables are missing/empty/duplicated, or columns are not found.
+        If variables are missing, empty, duplicated, or not present in ``df``.
+    RuntimeError
+        If backend training fails.
+
+    Notes
+    -----
+    - If a 'set' column exists, only rows with ``set == 'training'`` are used.
+    - Keys in ``model_config`` not listed above are ignored.
+    - To speed up experiments, restrict ``estimator_list`` (FLAML) or reduce
+      ``max_models`` / ``nfolds`` (H2O).
     """
     backend = (backend or "flaml").lower()
 

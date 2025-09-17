@@ -52,8 +52,8 @@ h2o = ["h2o>=3.44"]
 all = ["flaml>=2.1", "h2o>=3.44"]
 
 [project.urls]
-Homepage = "https://github.com/dsncas/normet"
-Issues = "https://github.com/dsncas/normet/issues"
+Homepage = "https://github.com/normet-dev/normet-py"
+Issues = "https://github.com/normet-dev/normet-py/issues"
 
 [tool.setuptools]
 package-dir = { "" = "src" }

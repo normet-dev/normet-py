@@ -19,7 +19,7 @@ def _run_syn(
     treated_unit: str,
     cutoff_date: str,
     donors: Optional[List[str]],
-    scm_backend: str = "ascm",
+    ascm_backend: str = "ascm",
     **kwargs,
 ) -> pd.DataFrame:
     """
@@ -41,17 +41,17 @@ def _run_syn(
         Treatment cutoff in "YYYY-MM-DD" (flexible parsing accepted).
     donors : List[str] | None
         Donor pool. If None, use all units except the treated unit.
-    scm_backend : {"ascm","mlascm"}
+    ascm_backend : {"ascm","mlascm"}
         Which synthetic-control backend to use.
     **kwargs
         Forwarded to the selected backend function.
 
-        If scm_backend == "mlascm":
+        If ascm_backend == "mlascm":
           - backend: {"flaml","h2o"} (ML AutoML backend, default "flaml")
           - model_config: dict (AutoML settings)
           - seed: int, etc.
 
-        If scm_backend == "ascm":
+        If ascm_backend == "ascm":
           - pre_covariates: List[str]
           - allow_negative_weights: bool
 
@@ -68,7 +68,7 @@ def _run_syn(
         raise ValueError("`treated_unit` must be a non-empty string.")
 
     # Normalize backend selector
-    scm_backend = (scm_backend or "ascm").lower()
+    ascm_backend = (ascm_backend or "ascm").lower()
 
     # Units & donors
     all_units = list(pd.unique(df[unit_col]))
@@ -89,11 +89,11 @@ def _run_syn(
     cutoff_str = cutoff_ts.strftime("%Y-%m-%d")
 
     # ---- Route to requested backend
-    if scm_backend == "ascm":
+    if ascm_backend == "ascm":
         from ..scm.ascm import ascm
         log.info(
-            "Running synthetic control | scm_backend=%s | treated=%s | donors=%d | cutoff=%s",
-            scm_backend, treated_unit, len(donor_pool), cutoff_str,
+            "Running synthetic control | ascm_backend=%s | treated=%s | donors=%d | cutoff=%s",
+            ascm_backend, treated_unit, len(donor_pool), cutoff_str,
         )
         out = ascm(
             df=df,
@@ -108,13 +108,13 @@ def _run_syn(
         # ASCM returns a dict with key "synthetic"
         return out["synthetic"]
 
-    if scm_backend == "mlascm":
+    if ascm_backend == "mlascm":
         from ..scm.mlascm import mlascm
         kw = dict(kwargs)  # avoid mutating original kwargs
         ml_backend = (kw.pop("backend", "flaml") or "flaml").lower()
         log.info(
-            "Running synthetic control | scm_backend=%s (backend=%s) | treated=%s | donors=%d | cutoff=%s",
-            scm_backend, ml_backend, treated_unit, len(donor_pool), cutoff_str,
+            "Running synthetic control | ascm_backend=%s (backend=%s) | treated=%s | donors=%d | cutoff=%s",
+            ascm_backend, ml_backend, treated_unit, len(donor_pool), cutoff_str,
         )
         return mlascm(
             df=df,
@@ -128,4 +128,4 @@ def _run_syn(
             **kw,  # model_config, seed, etc.
         )
 
-    raise ValueError(f"Unsupported scm_backend: {scm_backend}")
+    raise ValueError(f"Unsupported ascm_backend: {ascm_backend}")

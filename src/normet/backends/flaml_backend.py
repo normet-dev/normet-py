@@ -24,50 +24,63 @@ def _import_flaml_automl():
     return AutoML
 
 
-def save_flaml(model: object, model_path: Union[str, Path], model_name: str) -> str:
+def save_flaml(
+    model,
+    folder_path: Union[str, Path] = ".",
+    filename: str = "automl.joblib",
+) -> str:
     """
-    Save a FLAML model to disk using joblib.
+    Save a FLAML AutoML model to the specified directory with the given filename.
 
     Parameters
     ----------
-    model : object
-        Trained FLAML AutoML object.
-    model_path : str | Path
-        Directory where the model will be saved (created if needed).
-    model_name : str
-        Base filename for the saved model (without extension).
+    model : AutoML
+        The FLAML AutoML model to save.
+    folder_path : str | Path, default="."
+        Directory path to save the model.
+    filename : str, default="automl.joblib"
+        Desired filename. If no extension is given, ``.joblib`` will be added.
 
     Returns
     -------
     str
-        Full path to the saved ``.joblib`` file.
+        The path of the saved model.
     """
-    joblib = require("joblib", hint="pip install joblib")
-    p = Path(model_path)
-    p.mkdir(parents=True, exist_ok=True)
-    out = p / f"{model_name}.joblib"
-    joblib.dump(model, str(out))
-    log.info("Saved FLAML model to %s", out)
-    return str(out)
+    joblib = require("joblib", hint="pip install joblib")  # <-- added
+    folder = Path(folder_path)
+    folder.mkdir(parents=True, exist_ok=True)
+
+    # Ensure extension
+    if not Path(filename).suffix:
+        filename = f"{filename}.joblib"
+
+    model_path = folder / filename
+
+    joblib.dump(model, str(model_path))
+    log.info("Saved FLAML model to %s", model_path)
+    return str(model_path)
 
 
-def load_flaml(model_path: Union[str, Path], model_name: str = "automl") -> object:
+def load_flaml(
+    folder_path: Union[str, Path] = ".",
+    filename: Optional[str] = None,
+) -> object:
     """
     Load a FLAML model saved with ``save_flaml``.
 
     Resolution rules
     ----------------
-    - If ``model_path`` is a file ending with ``.joblib``/``.pkl``: load it.
-    - If ``model_path`` is a directory:
-        * prefer ``{model_name}.joblib`` if present;
-        * else pick the newest ``.joblib``/``.pkl`` file in the directory.
+    - If ``filename`` is provided, load exactly ``folder_path/filename``.
+    - Otherwise, scan ``folder_path`` and pick the most recently modified
+      ``.joblib`` or ``.pkl`` file.
 
     Parameters
     ----------
-    model_path : str | Path
-        File or directory path.
-    model_name : str, default "automl"
-        Expected base filename if ``model_path`` is a directory.
+    folder_path : str | Path, default "."
+        Directory containing the saved model, or a file path if you pass the
+        file directly via ``filename=None`` and ``folder_path`` is a file.
+    filename : str | None, optional
+        Specific filename to load (e.g., "automl.joblib"). If None, auto-pick.
 
     Returns
     -------
@@ -78,25 +91,34 @@ def load_flaml(model_path: Union[str, Path], model_name: str = "automl") -> obje
     ------
     FileNotFoundError
         If no suitable model file is found.
+    ImportError
+        If ``joblib`` is not installed.
     """
     joblib = require("joblib", hint="pip install joblib")
-    p = Path(model_path)
+    p = Path(folder_path)
 
-    def _pick_from_dir(d: Path) -> Optional[Path]:
-        cand = d / f"{model_name}.joblib"
-        if cand.exists():
-            return cand
-        files = [f for f in d.iterdir() if f.is_file() and f.suffix.lower() in {".joblib", ".pkl"}]
-        return max(files, key=lambda f: f.stat().st_mtime) if files else None
-
-    if p.is_dir():
-        target = _pick_from_dir(p)
-        if target is None:
-            raise FileNotFoundError(f"No FLAML model found under directory '{p}'.")
-    else:
-        if p.suffix.lower() not in {".joblib", ".pkl"}:
-            raise FileNotFoundError(f"Unsupported model file (expect .joblib/.pkl): '{p.name}'")
+    # If user passed a direct file path via folder_path and no filename
+    if filename is None and p.is_file():
         target = p
+        if target.suffix.lower() not in {".joblib", ".pkl"}:
+            raise FileNotFoundError(f"Unsupported model file (expect .joblib/.pkl): '{target.name}'")
+    else:
+        folder = p if p.is_dir() else p.parent
+        if not folder.exists():
+            raise FileNotFoundError(f"Folder not found: '{folder}'")
+
+        if filename:
+            target = folder / filename
+            if not target.exists():
+                raise FileNotFoundError(f"Specified model file not found: {target}")
+        else:
+            candidates = [
+                f for f in folder.iterdir()
+                if f.is_file() and f.suffix.lower() in {".joblib", ".pkl"}
+            ]
+            if not candidates:
+                raise FileNotFoundError(f"No FLAML model files (.joblib/.pkl) found under '{folder}'.")
+            target = max(candidates, key=lambda f: f.stat().st_mtime)
 
     model = joblib.load(str(target))
     if getattr(model, "backend", None) != "flaml":
@@ -129,13 +151,17 @@ def train_flaml(
     variables : List[str], optional
         Predictor variable names. Must be non-empty and unique.
     model_config : dict, optional
-        Extra FLAML configuration to override defaults. Common keys:
-          - ``time_budget`` (int, seconds)
-          - ``metric`` (e.g., "r2")
-          - ``estimator_list`` (e.g., ["lgbm"])
-          - ``task`` ("regression" / "classification")
-          - ``eval_method`` ("auto", "cv", "holdout")
-          - ``save_model`` (bool), ``model_name`` (str), ``model_path`` (str)
+        FLAML configuration overrides. Recognized keys and **defaults**:
+          - ``time_budget`` : int (default 90)
+          - ``metric`` : str (default "r2")
+          - ``estimator_list`` : list[str] (default ["lgbm"])
+          - ``task`` : {"regression","classification"} (default "regression")
+          - ``eval_method`` : {"auto","cv","holdout"} (default "auto")
+          - ``save_model`` : bool (default False)
+          - ``folder_path`` : str (default ".")
+          - ``filename`` : str (default "automl.joblib")
+          - ``verbose`` : bool (defaults to this function's ``verbose``)
+
     seed : int, default=7654321
         Random seed for reproducibility.
     verbose : bool, default=True
@@ -170,6 +196,7 @@ def train_flaml(
     if df_train[variables].shape[1] == 0:
         raise ValueError("No predictor columns available after preprocessing.")
 
+    # Defaults
     default_cfg: Dict[str, Any] = {
         "time_budget": 90,
         "metric": "r2",
@@ -177,13 +204,14 @@ def train_flaml(
         "task": "regression",
         "eval_method": "auto",
         "save_model": False,
-        "model_name": "automl",
-        "model_path": "./",
+        "folder_path": ".",
+        "filename": "automl.joblib",
         "verbose": verbose,
     }
     if model_config:
         default_cfg.update(model_config)
 
+    # Build kwargs for AutoML.fit
     passthrough = {"time_budget", "metric", "estimator_list", "task", "eval_method", "verbose"}
     automl_kwargs = {k: default_cfg[k] for k in passthrough if k in default_cfg}
 
@@ -203,8 +231,13 @@ def train_flaml(
     if verbose:
         log.info("FLAML best_estimator=%s | best_config=%s", automl.best_estimator, automl.best_config)
 
+    # Optional persistence
     if default_cfg.get("save_model", False):
-        save_flaml(automl, default_cfg.get("model_path", "./"), default_cfg.get("model_name", "automl"))
+        save_flaml(
+            automl,
+            folder_path=default_cfg.get("folder_path", "."),
+            filename=default_cfg.get("filename", "automl.joblib"),
+        )
 
     setattr(automl, "backend", "flaml")
     return automl

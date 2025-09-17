@@ -246,7 +246,7 @@ def uncertainty_bands(
     cutoff_date: str,
     donors: Optional[List[str]] = None,
     *,
-    scm_backend: str = "ascm",
+    ascm_backend: str = "ascm",
     method: str = "jackknife",
     B: int = 200,
     random_state: int = 7654321,
@@ -282,7 +282,7 @@ def uncertainty_bands(
     donors : list of str, optional
         List of donor units to include. If None, all units except the treated unit
         are used.
-    scm_backend : str, default="ascm"
+    ascm_backend : str, default="ascm"
         Backend used in `_run_syn`. Can be "ascm", "ridge", "mlascm", etc.
     method : {"bootstrap", "jackknife"}, default="bootstrap"
         Uncertainty estimation method:
@@ -332,7 +332,7 @@ def uncertainty_bands(
     >>> out = bootstrap_bands(
     ...     df, date_col="date", unit_col="ID",
     ...     outcome_col="SO2", treated_unit="CityA",
-    ...     cutoff_date="2015-10-23", scm_backend="ridge",
+    ...     cutoff_date="2015-10-23", ascm_backend="ridge",
     ...     method="jackknife", ci_level=0.95
     ... )
     >>> out["low"].head()
@@ -366,7 +366,7 @@ def uncertainty_bands(
         treated_unit=treated_unit,
         cutoff_date=cutoff_date,
         donors=base_donors,
-        scm_backend=scm_backend,
+        ascm_backend=ascm_backend,
         **kwargs,
     )
     effect_index = df_true.index
@@ -415,7 +415,7 @@ def uncertainty_bands(
                     treated_unit=treated_unit,
                     cutoff_date=cutoff_date,
                     donors=list(sub_donors),
-                    scm_backend=scm_backend,
+                    ascm_backend=ascm_backend,
                     **kwargs,
                 )
                 eff_b = out_b["effect"].reindex(effect_index)
@@ -454,7 +454,7 @@ def uncertainty_bands(
                     treated_unit=treated_unit,
                     cutoff_date=cutoff_date,
                     donors=donors_jk,
-                    scm_backend=scm_backend,
+                    ascm_backend=ascm_backend,
                     **kwargs,
                 )
                 eff_jk = out_jk["effect"].reindex(effect_index)

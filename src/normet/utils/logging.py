@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 from typing import Literal, Union, Optional
 
 _LOGGER_NAME = "normet"
@@ -10,31 +11,27 @@ _LOGGER_NAME = "normet"
 
 def get_logger(name: Optional[str] = None) -> logging.Logger:
     """
-    Return a namespaced logger with a NullHandler attached.
+    Return a namespaced logger for the ``normet`` package.
 
-    Notes
-    -----
-    - This ensures importing the package never configures global logging.
-    - Users can call :func:`enable_default_logging` for quick stdout logging
-      in scripts or notebooks.
+    The logger is guaranteed to have a ``NullHandler`` attached so
+    that importing ``normet`` never configures or interferes with
+    global logging state.
 
     Parameters
     ----------
-    name : str | None
-        Child logger name (e.g. "backends.h2o_backend").
-        If None, return the package root logger "normet".
+    name : str or None, optional
+        Child logger name (e.g., "analysis.decomposition").
+        If None, returns the package root logger "normet".
 
     Returns
     -------
     logging.Logger
+        Logger instance scoped to the package or submodule.
     """
     logger_name = f"{_LOGGER_NAME}.{name}" if name else _LOGGER_NAME
     logger = logging.getLogger(logger_name)
-
-    # Attach a NullHandler once (avoids "No handler found" warnings).
     if not any(isinstance(h, logging.NullHandler) for h in logger.handlers):
         logger.addHandler(logging.NullHandler())
-
     return logger
 
 
@@ -42,49 +39,71 @@ def enable_default_logging(
     level: Union[int, Literal["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"], None] = None,
     fmt: Optional[str] = None,
     propagate: bool = False,
+    *,
+    prefer_rich: bool = True,
 ) -> None:
     """
-    Attach a StreamHandler to the root "normet" logger for quick, opt-in logging.
+    Attach a default handler to the root "normet" logger.
+
+    Behavior
+    --------
+    - If ``prefer_rich`` and Rich is installed → use RichHandler.
+    - Otherwise → use plain StreamHandler.
 
     Parameters
     ----------
     level : int | str | None
-        Logging level. If None, falls back to env var ``NORMET_LOGLEVEL``.
-        Defaults to INFO if neither is provided.
-    fmt : str | None
-        Log format string. Defaults to a concise format
+        Logging level (e.g., "INFO"). If None, falls back to env
+        ``NORMET_LOGLEVEL`` or INFO by default.
+    fmt : str, optional
+        Format string for non-Rich handlers. Defaults to
         ``"%(levelname)s | %(name)s | %(message)s"``.
-    propagate : bool, default=False
-        Whether to propagate logs up to the global root logger.
+    propagate : bool, default False
+        Whether to propagate logs to the global root logger.
+    prefer_rich : bool, default True
+        Try to use RichHandler if available.
 
     Notes
     -----
-    - Intended for interactive use (Jupyter notebooks, quick scripts).
-    - Larger applications should configure logging explicitly.
+    - This function is intended for interactive use in notebooks
+      and scripts. Larger applications should configure logging
+      explicitly.
+    - Calling this function multiple times will not attach duplicate
+      stream handlers.
     """
     logger = get_logger()
 
-    # Avoid stacking multiple stream handlers if called repeatedly
+    # Avoid stacking multiple handlers
     if any(isinstance(h, logging.StreamHandler) for h in logger.handlers):
         return
 
-    # Resolve log level: explicit arg > env var > default INFO
+    # Resolve log level
     env_level = os.getenv("NORMET_LOGLEVEL", "").upper()
     if isinstance(level, str):
-        level_obj = getattr(logging, level.upper(), logging.INFO)
+        lvl = getattr(logging, level.upper(), logging.INFO)
     elif isinstance(level, int):
-        level_obj = level
+        lvl = level
     elif env_level:
-        level_obj = getattr(logging, env_level, logging.INFO)
+        lvl = getattr(logging, env_level, logging.INFO)
     else:
-        level_obj = logging.INFO
+        lvl = logging.INFO
 
-    # Configure stream handler
-    handler = logging.StreamHandler()
-    handler.setLevel(level_obj)
-    handler.setFormatter(logging.Formatter(fmt or "%(levelname)s | %(name)s | %(message)s"))
+    # Choose handler
+    if prefer_rich:
+        try:
+            from rich.logging import RichHandler  # type: ignore
+            handler = RichHandler(rich_tracebacks=True, markup=True)
+        except Exception:
+            handler = logging.StreamHandler(sys.stdout)
+    else:
+        handler = logging.StreamHandler(sys.stdout)
 
-    # Attach to package root logger
-    logger.setLevel(level_obj)
+    handler.setLevel(lvl)
+
+    # Apply formatter for plain handler
+    if 'rich' not in handler.__class__.__module__:
+        handler.setFormatter(logging.Formatter(fmt or "%(levelname)s | %(name)s | %(message)s"))
+
+    logger.setLevel(lvl)
     logger.addHandler(handler)
     logger.propagate = propagate
