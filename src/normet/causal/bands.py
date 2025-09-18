@@ -1,4 +1,4 @@
-# src/normet/scm/bands.py
+# src/normet/causal/bands.py
 from __future__ import annotations
 
 import numpy as np
@@ -23,7 +23,7 @@ __all__ = [
 def effect_bands_space(placebo_space_out: dict, level: float = 0.95, method: str = "quantile") -> pd.DataFrame:
     """
     Build per-time uncertainty bands for the treated effect from placebo-in-space output
-    (works for ASCM or ML-ASCM).
+    (works for SCM or ML-SCM).
 
     Bands are formed around the treated effect by adding placebo distribution
     summaries at each timestamp: effect(t) + Q_{α}(placebo_t) and effect(t) + Q_{1-α}(placebo_t),
@@ -246,7 +246,7 @@ def uncertainty_bands(
     cutoff_date: str,
     donors: Optional[List[str]] = None,
     *,
-    ascm_backend: str = "ascm",
+    scm_backend: str = "scm",
     method: str = "jackknife",
     B: int = 200,
     random_state: int = 7654321,
@@ -282,8 +282,8 @@ def uncertainty_bands(
     donors : list of str, optional
         List of donor units to include. If None, all units except the treated unit
         are used.
-    ascm_backend : str, default="ascm"
-        Backend used in `_run_syn`. Can be "ascm", "ridge", "mlascm", etc.
+    scm_backend : str, default="scm"
+        Backend used in `_run_syn`. Can be "scm", "ridge", "mlscm", etc.
     method : {"bootstrap", "jackknife"}, default="bootstrap"
         Uncertainty estimation method:
           - "bootstrap": donor subsampling (and optional block time resampling).
@@ -332,7 +332,7 @@ def uncertainty_bands(
     >>> out = bootstrap_bands(
     ...     df, date_col="date", unit_col="ID",
     ...     outcome_col="SO2", treated_unit="CityA",
-    ...     cutoff_date="2015-10-23", ascm_backend="ridge",
+    ...     cutoff_date="2015-10-23", scm_backend="ridge",
     ...     method="jackknife", ci_level=0.95
     ... )
     >>> out["low"].head()
@@ -366,7 +366,7 @@ def uncertainty_bands(
         treated_unit=treated_unit,
         cutoff_date=cutoff_date,
         donors=base_donors,
-        ascm_backend=ascm_backend,
+        scm_backend=scm_backend,
         **kwargs,
     )
     effect_index = df_true.index
@@ -415,7 +415,7 @@ def uncertainty_bands(
                     treated_unit=treated_unit,
                     cutoff_date=cutoff_date,
                     donors=list(sub_donors),
-                    ascm_backend=ascm_backend,
+                    scm_backend=scm_backend,
                     **kwargs,
                 )
                 eff_b = out_b["effect"].reindex(effect_index)
@@ -454,7 +454,7 @@ def uncertainty_bands(
                     treated_unit=treated_unit,
                     cutoff_date=cutoff_date,
                     donors=donors_jk,
-                    ascm_backend=ascm_backend,
+                    scm_backend=scm_backend,
                     **kwargs,
                 )
                 eff_jk = out_jk["effect"].reindex(effect_index)
@@ -560,7 +560,7 @@ def plot_effect_with_bands(
 def plot_uncertainty_bands(
     out: dict,
     cutoff_date: Optional[object] = None,
-    title: str = "ASCM Effect with Uncertainty Bands",
+    title: str = "SCM Effect with Uncertainty Bands",
     ax=None
 ):
     """
@@ -585,7 +585,7 @@ def plot_uncertainty_bands(
     cutoff_date : str or pandas.Timestamp, optional
         If provided, a vertical dashed line is drawn at this date to mark
         the intervention cutoff.
-    title : str, default="ASCM Effect with Uncertainty Bands"
+    title : str, default="SCM Effect with Uncertainty Bands"
         Title for the plot.
     ax : matplotlib.axes.Axes, optional
         Matplotlib axis to draw on. If None, a new figure and axis are created.
@@ -608,12 +608,12 @@ def plot_uncertainty_bands(
     --------
     >>> out_boot = bootstrap_bands(df, ..., method="bootstrap")
     >>> plot_bands(out_boot, cutoff_date="2015-10-23",
-    ...            title="ASCM Effect (Bootstrap)")
+    ...            title="SCM Effect (Bootstrap)")
     >>> plt.show()
 
     >>> out_jk = bootstrap_bands(df, ..., method="jackknife")
     >>> plot_bands(out_jk, cutoff_date="2015-10-23",
-    ...            title="ASCM Effect (Jackknife)")
+    ...            title="SCM Effect (Jackknife)")
     >>> plt.show()
     """
     if out is None or "treated" not in out:

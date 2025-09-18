@@ -1,4 +1,4 @@
-# src/normet/scm/ascm.py
+# src/normet/causal/scm.py
 from __future__ import annotations
 
 import time
@@ -12,10 +12,10 @@ from ..utils.logging import get_logger
 
 log = get_logger(__name__)
 
-__all__ = ["ascm"]
+__all__ = ["scm"]
 
 
-def ascm(
+def scm(
     df: pd.DataFrame,
     date_col: str = "date",
     unit_col: str = "code",
@@ -28,7 +28,7 @@ def ascm(
     allow_negative_weights: bool = False,
 ) -> Dict[str, Any]:
     """
-    Augmented Synthetic Control Method (ASCM) for a single treated unit.
+    Augmented Synthetic Control Method (SCM) for a single treated unit.
 
     Fits a ridge-augmented outcome model at each time point using pre-treatment
     information, then balances donor residuals to construct a synthetic counterfactual
@@ -230,5 +230,5 @@ def ascm(
     out = pd.DataFrame({"observed": panel[treated_unit], "synthetic": synth})
     out["effect"] = out["observed"] - out["synthetic"]
 
-    log.info("ASCM finished in %.2fs | pre T=%d | donors=%d", time.time() - t0, len(dates_pre), len(donors))
+    log.info("SCM finished in %.2fs | pre T=%d | donors=%d", time.time() - t0, len(dates_pre), len(donors))
     return {"synthetic": out, "weights": weights, "alpha": alpha_map}

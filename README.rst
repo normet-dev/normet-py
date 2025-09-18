@@ -6,7 +6,7 @@ It provides tools for:
 
 - **Normalisation / deweathering** of pollutant concentrations.
 - **Counterfactual modelling** using AutoML backends (FLAML, H2O).
-- **Synthetic control methods** (ASCM, ML-ASCM).
+- **Synthetic control methods** (SCM, ML-SCM).
 - **Uncertainty quantification** via bootstrapping and placebo tests.
 - **Evaluation metrics** tailored for environmental data.
 
@@ -144,11 +144,11 @@ MET decomposition (meteorology-driven component):
 
 ---
 
-Run augmented synthetic control (ASCM):
+Run synthetic control (SCM):
 
 .. code-block:: python
 
-    from normet.scm import _run_syn
+    from normet.causal import _run_syn
 
     syn = _run_syn(
         df=df_panel,
@@ -158,7 +158,7 @@ Run augmented synthetic control (ASCM):
         treated_unit="Beijing",
         cutoff_date="2017-01-01",
         donors=["Shanghai", "Guangzhou", "Chengdu"],
-        ascm_backend="ascm",
+        scm_backend="scm",
     )
 
     print(syn.head())  # observed, synthetic, effect
@@ -167,7 +167,7 @@ Placebo-in-space test:
 
 .. code-block:: python
 
-    from normet.scm import placebo_in_space, effect_bands_space
+    from normet.causal import placebo_in_space, effect_bands_space
 
     out = placebo_in_space(
         df=df_panel,
@@ -185,7 +185,7 @@ Placebo-in-time test:
 
 .. code-block:: python
 
-    from normet.scm import placebo_in_time
+    from normet.causal import placebo_in_time
 
     out_time = placebo_in_time(
         df=df_panel,
@@ -194,7 +194,7 @@ Placebo-in-time test:
         outcome_col="pm25",
         treated_unit="Beijing",
         cutoff_date="2017-01-01",
-        ascm_backend="ascm", #'ascm' or 'mlascm'
+        scm_backend="scm", #'scm' or 'mlscm'
         n_rep=50,  # number of pseudo cutoffs to test
     )
 
@@ -209,7 +209,7 @@ Uncertainty bands can be constructed using either **bootstrap** or **jackknife**
 
 .. code-block:: python
 
-    from normet.scm import uncertainty_bands, plot_uncertainty_bands
+    from normet.causal import uncertainty_bands, plot_uncertainty_bands
 
     # Bootstrap version
     boot = uncertainty_bands(
@@ -219,7 +219,7 @@ Uncertainty bands can be constructed using either **bootstrap** or **jackknife**
         outcome_col="pm25",
         treated_unit="Beijing",
         cutoff_date="2017-01-01",
-        ascm_backend="ascm",
+        scm_backend="scm",
         method="bootstrap",   # donor/time resampling
         B=200,
     )
@@ -234,7 +234,7 @@ Uncertainty bands can be constructed using either **bootstrap** or **jackknife**
         outcome_col="pm25",
         treated_unit="Beijing",
         cutoff_date="2017-01-01",
-        ascm_backend="ascm",
+        scm_backend="scm",
         method="jackknife",   # leave-one-donor-out
         ci_level=0.95,
     )

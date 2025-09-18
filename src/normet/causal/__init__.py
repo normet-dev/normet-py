@@ -1,18 +1,19 @@
+# src/normet/causal/__init__.py
 # --- Core methods ------------------------------------------------------------
-from .ascm import ascm
+from .scm import scm
 
-# mlascm may require optional deps; fail gracefully with a helpful error.
+# mlscm may require optional deps; fail gracefully with a helpful error.
 try:
-    from .mlascm import mlascm
-    _HAS_MLASCM = True
+    from .mlscm import mlscm
+    _HAS_MLSCM = True
 except Exception as _e:
-    _HAS_MLASCM = False
-    _MLASCM_IMPORT_ERR = _e
+    _HAS_MLSCM = False
+    _MLSCM_IMPORT_ERR = _e
 
-    def mlascm(*args, **kwargs):  # type: ignore[override]
+    def mlscm(*args, **kwargs):  # type: ignore[override]
         raise ImportError(
-            "mlascm is unavailable because its optional dependencies failed to import. "
-            f"Original error: {_MLASCM_IMPORT_ERR}\n"
+            "mlscm is unavailable because its optional dependencies failed to import. "
+            f"Original error: {_MLSCM_IMPORT_ERR}\n"
             "Install an AutoML backend (e.g., flaml or h2o) and ensure it's importable."
         )
 
@@ -32,14 +33,14 @@ from .batch import scm_all
 
 # --- Simple backend registry -------------------------------------------------
 BACKENDS = {
-    "ascm": ascm,
-    "mlascm": mlascm,
+    "scm": scm,
+    "mlscm": mlscm,
 }
 
 __all__ = [
     # core
-    "ascm",
-    "mlascm",
+    "scm",
+    "mlscm",
     # placebo
     "placebo_in_space",
     "placebo_in_time",

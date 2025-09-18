@@ -5,27 +5,6 @@ normet: Normalisation, Decomposition, and Counterfactual Modelling for Environme
 High-level entry points for normalisation, decomposition,
 synthetic control, modelling, and evaluation.
 """
-
-# --- Pipelines ---
-from .pipeline import do_all, do_all_unc, run_workflow
-
-# --- Analysis ---
-from .analysis import normalise, rolling, pdp, decom_emi, decom_met
-
-# --- Synthetic control ---
-from .scm import (
-    ascm,
-    mlascm,
-    placebo_in_space,
-    placebo_in_time,
-    effect_bands_space,
-    effect_bands_time,
-    uncertainty_bands,
-    plot_effect_with_bands,
-    plot_uncertainty_bands,
-    scm_all,
-)
-
 # --- Modelling ---
 from .model import (
     build_model,
@@ -46,6 +25,26 @@ from .utils import (
     split_into_sets,
 )
 
+# --- Pipelines ---
+from .pipeline import do_all, do_all_unc, run_workflow
+
+# --- Analysis ---
+from .analysis import normalise, rolling, pdp, decom_emi, decom_met
+
+# --- Synthetic control ---
+from .causal import (
+    scm,
+    mlscm,
+    placebo_in_space,
+    placebo_in_time,
+    effect_bands_space,
+    effect_bands_time,
+    uncertainty_bands,
+    plot_effect_with_bands,
+    plot_uncertainty_bands,
+    scm_all,
+)
+
 __all__ = [
     # --- Pipelines ---
     "do_all",
@@ -60,8 +59,8 @@ __all__ = [
     "decom_met",
 
     # --- Synthetic control ---
-    "ascm",
-    "mlascm",
+    "scm",
+    "mlscm",
     "placebo_in_space",
     "placebo_in_time",
     "effect_bands_space",

@@ -1,4 +1,4 @@
-# src/normet/scm/batch.py
+# src/normet/causal/batch.py
 from __future__ import annotations
 
 import os
@@ -22,7 +22,7 @@ def scm_all(
     unit_col: str,
     donors: Optional[List[str]],
     cutoff_date: str,
-    scm_backend: str = "ascm",
+    scm_backend: str = "scm",
     n_cores: Optional[int] = None,
     **kwargs,
 ) -> pd.DataFrame:
@@ -43,19 +43,19 @@ def scm_all(
         Donor pool. If None, use all units except the treated unit.
     cutoff_date : str
         Treatment cutoff in "YYYY-MM-DD" format.
-    scm_backend : {"ascm","mlascm"}, optional
+    scm_backend : {"scm","mlscm"}, optional
         Synthetic-control backend to use:
-          - "ascm"   : Augmented SCM.
-          - "mlascm" : ML-augmented SCM (requires ML backend via kwargs).
+          - "scm"   : Augmented SCM.
+          - "mlscm" : ML-augmented SCM (requires ML backend via kwargs).
     n_cores : int | None, optional
         Number of parallel workers. Defaults to all cores - 1.
     **kwargs
         Forwarded to `_run_syn`. Examples:
-          - If `scm_backend="mlascm"`:
+          - If `scm_backend="mlscm"`:
               * backend="flaml"|"h2o"   (ML backend; default "flaml")
               * model_config={...}      (AutoML config)
               * seed=123                (random seed)
-          - If `scm_backend="ascm"`:
+          - If `scm_backend="scm"`:
               * pre_covariates=[...]
               * allow_negative_weights=True
 
@@ -70,7 +70,7 @@ def scm_all(
     units = sorted(pd.unique(df[unit_col]))
     n_cores_eff = max(1, n_cores if n_cores is not None else (os.cpu_count() or 2) - 1)
 
-    ml_backend_for_log = kwargs.get("backend", None) if scm_backend == "mlascm" else None
+    ml_backend_for_log = kwargs.get("backend", None) if scm_backend == "mlscm" else None
     log.info(
         "scm_all: scm_backend=%s | ml_backend=%s | cutoff=%s | units=%d | n_cores=%d",
         scm_backend, ml_backend_for_log, cutoff_date, len(units), n_cores_eff
@@ -88,7 +88,7 @@ def scm_all(
                 donors=donors_u,
                 cutoff_date=cutoff_date,
                 scm_backend=scm_backend,
-                **kwargs,   # may include backend="flaml"/"h2o" if mlascm
+                **kwargs,   # may include backend="flaml"/"h2o" if mlscm
             )
             out = syn.copy()
             out[unit_col] = code
