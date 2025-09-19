@@ -76,7 +76,7 @@ def _run_syn(
         raise ValueError(f"Treated unit '{treated_unit}' not present in `{unit_col}`.")
 
     base_pool = donors if donors is not None else all_units
-    # 保留顺序去重，排除 treated
+
     donor_pool = [u for u in dict.fromkeys(base_pool) if u != treated_unit]
     if not donor_pool:
         raise ValueError("No donors available after excluding the treated unit.")
